@@ -4,12 +4,30 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Scanner;
 
-public class LogManagerORI {
-    private static BufferedWriter writer;
-    private static File currentLogFile; //HOMEMADEAAAA
+public class LogManagerORI2 {
+    private BufferedWriter writer;         // [UPDATED] non-static writer
+    private File currentLogFile;           // [UPDATED] non-static file
+    private String baseFolder;             // For dynamic folder path
 
+    // ================================
+    // Constructors
+    // ================================
+    public LogManagerORI2() {
+        this.baseFolder = "Logs";          // Default folder
+    }
+
+    public LogManagerORI2(String folderName) {
+        if (folderName == null || folderName.trim().isEmpty()) {
+            this.baseFolder = "Logs";
+        } else {
+            this.baseFolder = folderName.trim();
+        }
+    }
+
+    // ================================
     // Initialize and create folder structure for logs
-    public static void initializeLog() {
+    // ================================
+    public void initializeLog() {
         try {
             Date now = new Date();
 
@@ -24,8 +42,8 @@ public class LogManagerORI {
             String date = dateFormat.format(now);
             String time = timeFormat.format(now);
 
-            // Folder structure: logs/year/month/date/
-            String folderPath = "Logs/" + year + "/" + month + "/" + date;
+            // Folder structure: baseFolder/year/month/date/
+            String folderPath = baseFolder + "/" + year + "/" + month + "/" + date;
             File folder = new File(folderPath);
             if (!folder.exists()) {
                 folder.mkdirs();
@@ -37,8 +55,7 @@ public class LogManagerORI {
             File logFile = new File(folderPath, fileName);
             logFile.createNewFile();
 
-            //homemadeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-            currentLogFile = logFile; //Assign to currentLogFile so archiveLog()
+            currentLogFile = logFile;
 
             // Open writer
             writer = new BufferedWriter(new FileWriter(logFile, true));
@@ -51,8 +68,10 @@ public class LogManagerORI {
         }
     }
 
+    // ================================
     // Write a log entry with timestamp
-    public static void log(String message) {
+    // ================================
+    public void log(String message) {
         try {
             if (writer == null) initializeLog();
             String timestamp = new SimpleDateFormat("HH:mm:ss").format(new Date());
@@ -63,8 +82,10 @@ public class LogManagerORI {
         }
     }
 
+    // ================================
     // Close the log safely
-    public static void closeLog() {
+    // ================================
+    public void closeLog() {
         try {
             if (writer != null) {
                 log("[SYSTEM] Log closed.");
@@ -75,22 +96,22 @@ public class LogManagerORI {
         }
     }
 
+    // ================================
     // Archive current log file
-    public static void archiveLog() {
-
+    // ================================
+    public void archiveLog() {
         if (currentLogFile == null) {
             System.out.println("No log file to archive.");
             return;
         }
 
         try {
-            // Extract year/month/date from currentLogFile path
             File parent = currentLogFile.getParentFile(); // points to date folder
             File monthFolder = parent.getParentFile();
             File yearFolder = monthFolder.getParentFile();
 
             // Create same structure inside Archive
-            String archiveFolderPath = "Logs/Archive/" + yearFolder.getName() + "/" + monthFolder.getName() + "/" + parent.getName();
+            String archiveFolderPath = baseFolder + "/Archive/" + yearFolder.getName() + "/" + monthFolder.getName() + "/" + parent.getName();
             File archiveDir = new File(archiveFolderPath);
             if (!archiveDir.exists()) archiveDir.mkdirs();
 
@@ -112,11 +133,10 @@ public class LogManagerORI {
         }
     }
 
-    //SEOCND PANIC ATTACK
     // ================================
-// Delete a log file by user input
-// ================================
-    public static void deleteLog() {
+    // Delete a log file by user input
+    // ================================
+    public void deleteLog() {
         Scanner sc = new Scanner(System.in);
 
         System.out.print("Enter log date path (e.g., 2025/Oct/28): ");
@@ -125,7 +145,7 @@ public class LogManagerORI {
         System.out.print("Enter log file name (e.g., log_12-34-56.txt): ");
         String fileName = sc.nextLine();
 
-        File logFile = new File("Logs/" + datePath + "/" + fileName);
+        File logFile = new File(baseFolder + "/" + datePath + "/" + fileName);
 
         if (logFile.exists()) {
             if (logFile.delete()) {
@@ -139,9 +159,9 @@ public class LogManagerORI {
     }
 
     // ================================
-// Move a log file to another folder
-// ================================
-    public static void moveLog() {
+    // Move a log file to another folder
+    // ================================
+    public void moveLog() {
         Scanner sc = new Scanner(System.in);
 
         System.out.print("Enter log date path (e.g., 2025/Oct/28): ");
@@ -150,7 +170,7 @@ public class LogManagerORI {
         System.out.print("Enter log file name (e.g., log_12-34-56.txt): ");
         String fileName = sc.nextLine();
 
-        File sourceFile = new File("Logs/" + datePath + "/" + fileName);
+        File sourceFile = new File(baseFolder + "/" + datePath + "/" + fileName);
         if (!sourceFile.exists()) {
             System.out.println("[ERROR] Source file not found: " + sourceFile.getAbsolutePath());
             return;
@@ -176,7 +196,6 @@ public class LogManagerORI {
                 out.write(buffer, 0, length);
             }
 
-            // Optionally delete the original file after moving
             if (sourceFile.delete()) {
                 System.out.println("[LOG] File moved successfully to: " + destinationFile.getAbsolutePath());
             } else {
@@ -188,33 +207,40 @@ public class LogManagerORI {
         }
     }
 
-
     // ================================
-// Main Class (Program Entry Point)
-// ================================
+    // Main Class (Program Entry Point)
+    // ================================
     public static void main(String[] args) {
-
         Scanner sc = new Scanner(System.in);
 
+        // [ADDED] Multiple log managers using constructor
+        LogManagerORI2 agvLog = new LogManagerORI2("Logs/AGV");           // [ADDED]
+        LogManagerORI2 batteryLog = new LogManagerORI2("Logs/Battery");   // [ADDED]
+        LogManagerORI2 systemLog = new LogManagerORI2("Logs/System");     // [ADDED]
 
         // Step 1: Start logging system
-        LogManager.initializeLog();
-        LogManager.log("[INFO] Warehouse automation simulation started.");
+        systemLog.initializeLog();    // system log
+        agvLog.initializeLog();       // AGV log
+        batteryLog.initializeLog();   // Battery log
 
         // Step 2: Example workflow
-        LogManager.log("[INFO] AGV#1 initialized with battery 87.5%");
-        LogManager.log("[INFO] AGV#1 picked up Box#A1 from Entry point.");
-        LogManager.log("[INFO] AGV#1 moved to shelf position [2,2].");
-        LogManager.log("[INFO] Box#A1 stored successfully.");
-        LogManager.log("[INFO] AGV#1 returning to charging station.");
-        LogManager.log("[INFO] AGV#1 recharging started.");
+        systemLog.log("[INFO] Warehouse automation simulation started.");
+        agvLog.log("[AGV] AGV#1 picked up Box#A1 from Entry point.");
+        agvLog.log("[AGV] AGV#1 moved to shelf position [2,2].");
+        agvLog.log("[AGV] Box#A1 stored successfully.");
+        batteryLog.log("[BATTERY] AGV#1 battery at 50% — recharging.");
+        batteryLog.log("[BATTERY] Recharging complete, back to 100%.");
+        systemLog.log("[SYSTEM] All systems normal.");
 
         // Step 3: End of program
-        LogManager.log("[INFO] Simulation completed successfully.");
-        LogManager.closeLog();
+        systemLog.log("[INFO] Simulation completed successfully.");
+        systemLog.closeLog();
+        agvLog.closeLog();
+        batteryLog.closeLog();
 
-        System.out.println("\nSimulation completed. Check 'logs' folder for output log file.");
+        System.out.println("\nSimulation completed. Check 'Logs' folder for output log files.");
 
+        // [KEEP MAIN INTERACTIONS SAME]
         System.out.print("Do you want to view a previous log file? (y/n): ");
         if (sc.nextLine().equalsIgnoreCase("y")) {
             System.out.print("Enter the date (YYYY/MMM/dd): ");
@@ -232,18 +258,14 @@ public class LogManagerORI {
             } else System.out.println("No folder found for that date.");
         }
 
-
         System.out.print("\nDo you want to delete a log file? (y/n): ");
         if (sc.nextLine().equalsIgnoreCase("y")) {
-            deleteLog();
+            systemLog.deleteLog();
         }
 
         System.out.print("\nDo you want to move a log file? (y/n): ");
         if (sc.nextLine().equalsIgnoreCase("y")) {
-            moveLog();
+            systemLog.moveLog();
         }
-
-
     }
-
 }
